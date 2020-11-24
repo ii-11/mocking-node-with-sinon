@@ -8,7 +8,42 @@ describe("File Management Mocks", () => {
     sinon.restore();
   });
 
-  it("True should be true", () => {
-    expect(true).to.be.true;
+  it("Should call writeFileSync when creating a file", () => {
+    const writeMock = sinon.mock(fs);
+    writeMock.expects("writeFileSync").once();
+
+    const fileManagement = proxyquire("./file.management", { fs });
+    fileManagement.createFile("test.txt");
+
+    writeMock.verify(); // verify the expectation
   });
+
+  it("CreateFileSafe should create a new file with a number appended", () => {
+    const writeMock = sinon.mock(fs);
+
+    writeMock.expects("writeFileSync").withArgs("./data/test.txt").throws();
+    writeMock.expects("writeFileSync").withArgs("./data/test1.txt").once();
+    writeMock.expects("readdirSync").returns(["test.txt"]).once();
+
+    const fileManagement = proxyquire("./file.management", { fs });
+    fileManagement.createFileSafe("test.txt");
+
+    writeMock.verify();
+  });
+
+  it("createFile should never call writeFileSync when the file is empty", () => {
+    const writeMock = sinon.mock(fs);
+    writeMock.expects("writeFileSync").never();
+
+    const fileManagement = proxyquire("./file.management", { fs });
+    try {
+    fileManagement.createFile();
+    } catch(err) {}
+
+    writeMock.verify();
+  })
+
+  // other usages:
+  // twice(), thrice(), exactly(number), atLeast(number), atMost(number)
+  // withExactArgs()
 });
