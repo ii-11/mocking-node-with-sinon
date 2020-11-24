@@ -3,7 +3,7 @@ const sinon = require("sinon");
 const fs = require("fs");
 const proxyquire = require("proxyquire");
 
-describe("File Management", () => {
+describe.skip("File Management", () => {
   beforeEach(() => {});
 
   afterEach(() => {
@@ -36,4 +36,8 @@ describe("File Management", () => {
       expect(writeSpy.notCalled).to.be.true;
     });
   });
+
+  // Other usages:
+  // calledCount, threw(), returned(), calledWithExactly()
+  // alwaysCalledWith(), getCall(), args
 });

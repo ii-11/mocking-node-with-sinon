@@ -1,10 +1,77 @@
 const { expect } = require("chai");
-const { createSandbox } = require("sinon");
+const sinon = require("sinon");
 const fs = require("fs");
 const proxyquire = require("proxyquire");
 
 describe("File Management", () => {
-  it("true should be true", () => {
-    expect(true).to.be.true;
-  });
+  afterEach(() => {
+    sinon.restore();
+  })
+
+  it("should write a new file", () => {
+    const writeSub = sinon.stub(fs, "writeFileSync");
+    const fileManagement = proxyquire("./file.management", { fs });
+
+    fileManagement.createFile("test.txt");
+
+    expect(writeSub.callCount).to.equal(1);
+  })
+
+  it("should throw an exception if file already exists", () => {
+    const writeSub = sinon.stub(fs, "writeFileSync");
+    writeSub.throws(new Error());
+
+    const fileManagement = proxyquire("./file.management", { fs });
+
+    expect(() => fileManagement.createFile("test.txt")).to.throw();
+  })
+
+  it("createFileSafe should create a file named test1 when test already exists", () => {
+    const writeStub = sinon.stub(fs, "writeFileSync");
+    const readStub = sinon.stub(fs, "readdirSync");
+
+    const fileManagement = proxyquire("./file.management", { fs });
+
+    // writeStub.onCall(0).throws(new Error());
+    writeStub.withArgs("./data/test.txt").throws(new Error());
+    writeStub.returns(undefined);
+    readStub.returns(["test.txt"]);
+
+    fileManagement.createFileSafe("test.txt");
+
+    expect(writeStub.calledWith("./data/test1.txt")).to.be.true;
+  })
+
+  it("getAllFiles should return a list of files", () => {
+    const readStub = sinon.stub(fs, "readdir");
+
+    const fileManagement = proxyquire("./file.management", { fs });
+
+    readStub.yields(null, ["test.txt"]);
+
+    fileManagement.getAllFiles((err, data) => {
+      expect(data).to.eql(["test.txt"]);
+    })
+  })
+
+  it("getAllFilesPromises should return a list of files", () => {
+    const readStub = sinon.stub(fs, "readdir");
+
+    const util = {
+      promisify: sinon.stub().returns(readStub)
+    }
+
+    const fileManagement = proxyquire("./file.management", { fs, util });
+
+    readStub.resolves(["test.txt"]);
+
+    return fileManagement
+      .getAllFilesPromise()
+      .then(files => expect(files).to.eql(["test.txt"]))
+  })
+
+  // other interesting usages:
+  // stub.callsFake((...args) => {})
+  // sinon.addBehaviour("name", (fake, msg) => {})
+  // stub."name"
 });
